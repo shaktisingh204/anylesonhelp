@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S3 File List → Excel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f8fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 8px 14px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+  <!-- ✅ SheetJS for XLSX export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <h2>📂 S3 Folder Files</h2>
+  <div class="controls">
+    <input id="folderInput" type="text" placeholder="Enter S3 folder path" style="flex:1;">
+    <button id="loadBtn">Load Files</button>
+    <button id="downloadBtn">⬇️ Download XLSX</button>
+  </div>
+  <table id="fileTable">
+    <thead>
+      <tr>
+        <th>File Name</th>
+        <th>Size (KB)</th>
+        <th>URL</th>
+        <th>Name (Empty)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let currentFiles = [];
+
+    document.getElementById("loadBtn").addEventListener("click", async () => {
+      const folder = document.getElementById("folderInput").value.trim();
+      const tableBody = document.querySelector("#fileTable tbody");
+      tableBody.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
+
+      try {
+        const res = await fetch(`http://localhost:3000/list?prefix=${encodeURIComponent(folder)}`);
+        const files = await res.json();
+        currentFiles = files;
+        tableBody.innerHTML = "";
+
+        if (files.length === 0) {
+          tableBody.innerHTML = "<tr><td colspan='4'>No files found</td></tr>";
+          return;
+        }
+
+        for (const file of files) {
+          const name = file.key.split("/").pop();
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${name}</td>
+            <td>${(file.size / 1024).toFixed(2)}</td>
+            <td><a href="${file.url}" target="_blank">Open</a></td>
+            <td><input type="text" placeholder="Enter name"></td>
+          `;
+          tableBody.appendChild(row);
+        }
+      } catch (e) {
+        tableBody.innerHTML = `<tr><td colspan='4'>Error: ${e.message}</td></tr>`;
+      }
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      if (currentFiles.length === 0) {
+        alert("No files to export. Load a folder first!");
+        return;
+      }
+
+      // Collect data for Excel
+      const tableRows = Array.from(document.querySelectorAll("#fileTable tbody tr")).map((row) => {
+        const tds = row.querySelectorAll("td");
+        const input = tds[3].querySelector("input").value;
+        return {
+          "File Name": tds[0].textContent.trim(),
+          "Size (KB)": parseFloat(tds[1].textContent.trim()),
+          "URL": tds[2].querySelector("a").href,
+          "Name (Empty)": input || ""
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(tableRows);
+      XLSX.utils.book_append_sheet(wb, ws, "S3 Files");
+      XLSX.writeFile(wb, "s3_files.xlsx");
+    });
+  </script>
+</body>
+</html>

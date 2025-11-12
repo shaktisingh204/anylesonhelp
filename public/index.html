@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>S3 Video Exporter</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/1.1.0/modern-normalize.min.css" />
+  <style>
+    :root {
+      --accent: #2563eb;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --bg: #f3f4f6;
+    }
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg);
+      margin: 0;
+      padding: 28px;
+      color: #111827;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom: 18px;
+    }
+    header h1 { margin:0; font-size:1.25rem; }
+    .controls { display:flex; gap:8px; align-items:center; }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn.secondary {
+      background: white;
+      color: var(--accent);
+      border: 1px solid rgba(37,99,235,0.15);
+    }
+    .panel {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.06);
+    }
+    .folders-list { max-height: 70vh; overflow:auto; }
+    .folder-item {
+      padding: 12px;
+      border-radius: 8px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+      margin-bottom:8px;
+    }
+    .folder-item:hover { background: #eef2ff; }
+    .folder-name { font-weight:600; }
+    .files-table { width:100%; border-collapse: collapse; }
+    .files-table th, .files-table td { padding:10px; border-bottom:1px solid #edf2f7; text-align:left; }
+    .files-table th { background:#f8fafc; font-weight:600; }
+    .muted { color:var(--muted); font-size:0.95rem; }
+    .small { font-size:0.9rem; color:#374151; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🎬 S3 Video Exporter</h1>
+      <div class="controls">
+        <button id="browseBtn" class="btn">Browse Folders</button>
+        <button id="deepBtn" class="btn secondary" title="Find all videos recursively under current folder">Show All Deep Files</button>
+        <button id="exportAllBtn" class="btn" title="Export all discovered videos to ZIP">Export All (ZIP)</button>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="card">
+        <h3 style="margin-top:0">Folders</h3>
+        <div id="folders" class="folders-list"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 id="currentTitle" style="margin:0">Select a folder</h3>
+            <div id="currentPrefix" class="muted small"></div>
+          </div>
+          <div>
+            <button id="exportBtn" class="btn" style="display:none">Export This Folder</button>
+          </div>
+        </div>
+
+        <div id="filesContainer" style="margin-top:12px">
+          <table class="files-table" id="filesTable">
+            <thead><tr><th>Name</th><th>Size</th><th>Link</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="noFiles" class="muted" style="display:none; padding:12px">No video files to show.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
